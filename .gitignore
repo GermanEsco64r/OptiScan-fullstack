@@ -1,0 +1,71 @@
+# =========================================
+# SISTEMA OPERATIVO
+# =========================================
+.DS_Store
+Thumbs.db
+
+# =========================================
+# LOGS GENERALES
+# =========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# =========================================
+# VARIABLES DE ENTORNO
+# =========================================
+.env
+.env.*
+!.env.example
+
+# =========================================
+# ===== BACKEND (PYTHON) =====
+# =========================================
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Cache y compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Base de datos local (si usas sqlite)
+*.sqlite3
+
+# =========================================
+# ===== FRONTEND (NEXT.JS / NODE) =====
+# =========================================
+
+# Dependencias
+node_modules/
+
+# Next.js build
+.next/
+out/
+
+# Producción
+build/
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# =========================================
+# IDE / EDITORES
+# =========================================
+.vscode/
+.idea/
