@@ -330,15 +330,13 @@ def analyze_complete():
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Endpoint para verificar el estado del servidor"""
     return jsonify({
-        "status": "healthy", 
+        "status": "healthy",
         "service": "OptiScan Backend",
-        "python_path": python_path,
         "main_script_exists": os.path.exists(main_script_path),
-        "tonos_script_exists": os.path.exists(tonos_script_path),
-        "venv_exists": os.path.exists(venv_path)
+        "tonos_script_exists": os.path.exists(tonos_script_path)
     })
+
 
 if __name__ == '__main__':
     print(">>> Iniciando servidor Flask para OptiScan...")
