@@ -10,8 +10,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Rutas a los scripts
-venv_path = "./venv"
-python_path = os.path.join(venv_path, "Scripts", "python")
+python_path = "python"
 main_script_path = os.path.join(os.path.dirname(__file__), "main.py")
 tonos_script_path = os.path.join(os.path.dirname(__file__), "tonos.py")
 
@@ -343,11 +342,6 @@ def health_check():
 
 if __name__ == '__main__':
     print(">>> Iniciando servidor Flask para OptiScan...")
-    print(f">>> Python path: {python_path}")
-    print(f">>> Main script path: {main_script_path}")
-    print(f">>> Tonos script path: {tonos_script_path}")
-    print(f">>> Main script existe: {os.path.exists(main_script_path)}")
-    print(f">>> Tonos script existe: {os.path.exists(tonos_script_path)}")
-    print(f">>> Venv existe: {os.path.exists(venv_path)}")
-    
-    app.run(debug=True, port=5000, host='0.0.0.0')
+
+    port = int(os.environ.get("PORT", 8000))
+    app.run(host='0.0.0.0', port=port)
