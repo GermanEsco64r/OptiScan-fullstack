@@ -12,7 +12,10 @@ export class AuthService {
   constructor() {
     this.securityService = SecurityService.getInstance();
     this.apiBaseUrl =
-      typeof window !== "undefined" ? "" : "http://localhost:3000";
+  typeof window !== "undefined"
+    ? ""
+    : "https://optiscan.up.railway.app";
+
   }
 
   // Helper para hacer requests
