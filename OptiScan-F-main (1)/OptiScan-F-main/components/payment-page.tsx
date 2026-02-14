@@ -26,19 +26,20 @@ export function PaymentPage({ selectedPlan, onBack }: PaymentPageProps) {
     }).format(price)
   }
 
+  // Datos actualizados según lo solicitado
   const accountInfo = {
-    bank: "Banco Santander",
-    accountType: "Cuenta Corriente",
-    accountNumber: "123-456789/0",
-    cbu: "0720123456789012345678",
-    alias: "OPTISCAN.PAGOS",
-    holder: "OptiScan S.R.L.",
-    cuit: "30-12345678-9",
+    bank: "Banco de la Nación Argentina (BNA)",
+    accountType: "Caja de Ahorro en Pesos",
+    accountNumber: "27204079578679",
+    cbu: "0110407730040795786797",
+    alias: "27283873094.bna",
+    holder: "Patricia Veronica Maciel",
+    cuit: "27-28387309-4",
   }
 
   const contactInfo = {
-    email: "pagos@optiscan.com",
-    whatsapp: "+54 9 11 1234-5678",
+    email: "prof.danigodoy@gmail.com",
+    whatsapp: "+54 376 520-7107",
     businessHours: "Lunes a Viernes de 9:00 a 18:00 hs",
   }
 

@@ -75,8 +75,8 @@ export function Footer({ onNavigate }: FooterProps) {
           <div className="space-y-4">
             <h3 className="text-white font-semibold text-lg">Contacto</h3>
             <div className="space-y-3">
-              <p className="text-gray-400 text-sm">info@optiscan.com</p>
-              <p className="text-gray-400 text-sm">+1 (555) 123-4567</p>
+              <p className="text-gray-400 text-sm">optiscanmisiones@gmail.com</p>
+              <p className="text-gray-400 text-sm">+54 376 520-7107</p>
 
               <div className="pt-4">
                 <a
