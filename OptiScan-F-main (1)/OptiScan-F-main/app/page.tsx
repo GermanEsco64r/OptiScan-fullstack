@@ -49,7 +49,6 @@ export default function OptiScan() {
   } | null>(null)
 
   const [currentStep, setCurrentStep] = useState(1)
-  const [cameraPermission, setCameraPermission] = useState<"granted" | "denied" | "pending">("pending")
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [analysisComplete, setAnalysisComplete] = useState(false)
@@ -77,8 +76,6 @@ export default function OptiScan() {
     browser: "",
     version: "",
   })
-
-  const [cameraError, setCameraError] = useState<string>("")
 
   // Verificar sesión al cargar
   useEffect(() => {
@@ -252,120 +249,8 @@ export default function OptiScan() {
     setShowPricing(true)
   }
 
-  const requestCameraPermission = async () => {
-    setCameraError("")
-
-    try {
-      if (!browserSupport.hasGetUserMedia) {
-        throw new Error("Tu navegador no soporta acceso a cámara. Por favor actualiza tu navegador.")
-      }
-
-      console.log("[v0] Solicitando cámara en", browserSupport.browser, browserSupport.version)
-
-      const constraints = {
-        video: {
-          width: { ideal: 1280, min: 640 },
-          height: { ideal: 720, min: 480 },
-          facingMode: "user",
-          frameRate: { ideal: 30, min: 15 },
-          ...(browserSupport.browser === "Safari" && {
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-          }),
-        },
-        audio: false,
-      }
-
-      let stream: MediaStream
-
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        console.log("Usando navigator.mediaDevices.getUserMedia")
-        stream = await navigator.mediaDevices.getUserMedia(constraints)
-      } else if (navigator.getUserMedia) {
-        console.log("Usando navigator.getUserMedia (legacy)")
-        stream = await new Promise((resolve, reject) => {
-          navigator.getUserMedia(constraints, resolve, reject)
-        })
-      } else if (navigator.webkitGetUserMedia) {
-        console.log("Usando navigator.webkitGetUserMedia (webkit)")
-        stream = await new Promise((resolve, reject) => {
-          navigator.webkitGetUserMedia(constraints, resolve, reject)
-        })
-      } else if (navigator.mozGetUserMedia) {
-        console.log("Usando navigator.mozGetUserMedia (moz)")
-        stream = await new Promise((resolve, reject) => {
-          navigator.mozGetUserMedia(constraints, resolve, reject)
-        })
-      } else {
-        throw new Error("No se encontró API de cámara compatible")
-      }
-
-      streamRef.current = stream
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-
-        try {
-          await videoRef.current.play()
-          console.log("Video iniciado correctamente")
-        } catch (playError) {
-          console.warn("Error al iniciar video automáticamente:", playError)
-          videoRef.current.muted = true
-          await videoRef.current.play()
-        }
-      }
-
-      setCameraPermission("granted")
-      console.log("Cámara activada exitosamente")
-
-      const videoTrack = stream.getVideoTracks()[0]
-      if (videoTrack) {
-        console.log("Video track:", {
-          label: videoTrack.label,
-          enabled: videoTrack.enabled,
-          readyState: videoTrack.readyState,
-          settings: videoTrack.getSettings?.(),
-        })
-      }
-
-      setCurrentStep(2)
-    } catch (error: any) {
-      console.error("[v0] Error accessing camera:", error)
-      setCameraPermission("denied")
-
-      let errorMessage = "Error desconocido al acceder a la cámara"
-
-      if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-        errorMessage = "Permisos de cámara denegados. Por favor permite el acceso en tu navegador."
-      } else if (error.name === "NotFoundError" || error.name === "DevicesNotFoundError") {
-        errorMessage = "No se encontró ninguna cámara en tu dispositivo."
-      } else if (error.name === "NotReadableError" || error.name === "TrackStartError") {
-        errorMessage = "La cámara está siendo usada por otra aplicación. Cierra otras apps que usen la cámara."
-      } else if (error.name === "OverconstrainedError" || error.name === "ConstraintNotSatisfiedError") {
-        errorMessage = "La cámara no soporta la configuración solicitada. Intentando con configuración básica..."
-
-        try {
-          const basicConstraints = { video: true, audio: false }
-          const basicStream = await navigator.mediaDevices.getUserMedia(basicConstraints)
-          streamRef.current = basicStream
-          if (videoRef.current) {
-            videoRef.current.srcObject = basicStream
-            await videoRef.current.play()
-          }
-          setCameraPermission("granted")
-          setCurrentStep(2)
-          return
-        } catch (basicError) {
-          errorMessage = "No se pudo activar la cámara con ninguna configuración."
-        }
-      } else if (error.name === "NotSupportedError") {
-        errorMessage = "Tu navegador no soporta acceso a cámara. Prueba con Chrome, Firefox o Safari actualizado."
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-
-      setCameraError(errorMessage)
-    }
+  const requestCameraPermission = () => {
+    setCurrentStep(2) // Solo avanza al paso 2, la cámara se inicia en AnalysisStep2
   }
 
   const handleContinueToAnalysis = () => {
@@ -447,8 +332,6 @@ export default function OptiScan() {
     setFaceDetected(false)
     setScanningAnimation(false)
     setIsAnalyzing(false)
-    setCameraPermission("pending")
-    setCameraError("")
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop())
       streamRef.current = null
@@ -565,7 +448,7 @@ export default function OptiScan() {
 
       {!showLanding && !showDashboard && !showPricing && !showPayment && (
         <>
-          {currentStep === 1 && <AnalysisStep1 onRequestPermission={requestCameraPermission} error={cameraError} />}
+          {currentStep === 1 && <AnalysisStep1 onRequestPermission={requestCameraPermission} />}
 
           {currentStep === 2 && (
             <AnalysisStep2
@@ -574,7 +457,6 @@ export default function OptiScan() {
               isAnalyzing={isAnalyzing}
               analysisProgress={analysisProgress}
               scanningAnimation={scanningAnimation}
-              cameraPermission={cameraPermission}
             />
           )}
 

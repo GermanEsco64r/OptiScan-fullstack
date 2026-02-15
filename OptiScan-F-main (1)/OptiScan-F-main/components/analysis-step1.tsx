@@ -1,35 +1,14 @@
 "use client"
 
-import type React from "react"
-
 import { Camera, Eye, Lightbulb, Ruler, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 
 interface AnalysisStep1Props {
   onRequestPermission: () => void
-  cameraPermission: string
-  cameraError: string
-  browserSupport: {
-    hasGetUserMedia: boolean
-    hasMediaDevices: boolean
-    browser: string
-    version: string
-  }
-  videoRef: React.RefObject<HTMLVideoElement>
-  setCameraPermission: (permission: "granted" | "denied" | "pending") => void
-  setCameraError: (error: string) => void
 }
 
-export function AnalysisStep1({
-  onRequestPermission,
-  cameraPermission,
-  cameraError,
-  browserSupport,
-  videoRef,
-  setCameraPermission,
-  setCameraError,
-}: AnalysisStep1Props) {
+export function AnalysisStep1({ onRequestPermission }: AnalysisStep1Props) {
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
       {/* Animated background */}
@@ -126,12 +105,6 @@ export function AnalysisStep1({
                 </div>
               </div>
             </div>
-
-            {cameraError && (
-              <div className="mb-6 p-4 bg-red-900/30 border border-red-500/50 rounded-lg">
-                <p className="text-red-300 text-sm sm:text-base">{cameraError}</p>
-              </div>
-            )}
 
             <Button
               onClick={onRequestPermission}

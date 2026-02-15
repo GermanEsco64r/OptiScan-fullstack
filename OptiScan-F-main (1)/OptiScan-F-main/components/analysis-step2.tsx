@@ -13,7 +13,6 @@ interface AnalysisStep2Props {
   analysisProgress: number
   scanningAnimation: boolean
   onContinue: () => void
-  cameraPermission: string
 }
 
 export function AnalysisStep2({
