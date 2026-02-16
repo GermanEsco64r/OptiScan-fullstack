@@ -5,12 +5,14 @@ import json
 import os
 import base64
 import tempfile
+from mm import analizar_imagen_con_medidas_reales
 
 app = Flask(__name__)
 CORS(app)
 
 # Rutas a los scripts
-python_path = "python"
+venv_path = "./venv"
+python_path = os.path.join(venv_path, "Scripts", "python")
 main_script_path = os.path.join(os.path.dirname(__file__), "main.py")
 tonos_script_path = os.path.join(os.path.dirname(__file__), "tonos.py")
 
@@ -272,7 +274,14 @@ def analyze_complete():
                     line = line.strip()
                     if line.startswith('{') and line.endswith('}'):
                         try:
-                            resultados['forma_rostro'] = json.loads(line)
+                            forma_data = json.loads(line)
+                            
+                            # --- AÑADIR MEDIDAS CONVERTIDAS AQUÍ ---
+                            # Importar la función (ajusta la ruta según tu estructura)
+                            from mm import analizar_imagen_con_medidas_reales
+                            forma_data = analizar_imagen_con_medidas_reales(image_base64, forma_data)
+                            
+                            resultados['forma_rostro'] = forma_data
                             break
                         except:
                             continue
@@ -330,16 +339,23 @@ def analyze_complete():
 
 @app.route('/health', methods=['GET'])
 def health_check():
+    """Endpoint para verificar el estado del servidor"""
     return jsonify({
-        "status": "healthy",
+        "status": "healthy", 
         "service": "OptiScan Backend",
+        "python_path": python_path,
         "main_script_exists": os.path.exists(main_script_path),
-        "tonos_script_exists": os.path.exists(tonos_script_path)
+        "tonos_script_exists": os.path.exists(tonos_script_path),
+        "venv_exists": os.path.exists(venv_path)
     })
-
 
 if __name__ == '__main__':
     print(">>> Iniciando servidor Flask para OptiScan...")
-
-    port = int(os.environ.get("PORT", 8000))
-    app.run(host='0.0.0.0', port=port)
+    print(f">>> Python path: {python_path}")
+    print(f">>> Main script path: {main_script_path}")
+    print(f">>> Tonos script path: {tonos_script_path}")
+    print(f">>> Main script existe: {os.path.exists(main_script_path)}")
+    print(f">>> Tonos script existe: {os.path.exists(tonos_script_path)}")
+    print(f">>> Venv existe: {os.path.exists(venv_path)}")
+    
+    app.run(debug=True, port=5000, host='0.0.0.0')
