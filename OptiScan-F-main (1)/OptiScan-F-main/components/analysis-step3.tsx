@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { CheckCircle, RotateCcw, Ruler, Palette, Download, ExternalLink, Eye, ShoppingBag } from "lucide-react"
+import { CheckCircle, RotateCcw, Ruler, Palette, Download, ExternalLink, Eye, ShoppingBag, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -40,10 +40,21 @@ interface AnalysisStep3Props {
   onNewAnalysis: () => void
   onGoToDashboard?: () => void
   userFrames?: Frame[] // Marcos del usuario
+  capturedImage?: string // Imagen capturada (base64) para el PDF
 }
 
-export function AnalysisStep3({ faceAnalysis, onNewAnalysis, onGoToDashboard, userFrames = [] }: AnalysisStep3Props) {
+export function AnalysisStep3({ 
+  faceAnalysis, 
+  onNewAnalysis, 
+  onGoToDashboard, 
+  userFrames = [],
+  capturedImage 
+}: AnalysisStep3Props) {
   const [recommendedFrames, setRecommendedFrames] = useState<Frame[]>([])
+  // Estados para la generación del PDF
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [pdfDownloadProgress, setPdfDownloadProgress] = useState(0)
+  const [showDownloadProgress, setShowDownloadProgress] = useState(false)
 
   // Usamos useMemo para memoizar los frames por defecto
   const defaultFrames = useMemo(() => [
@@ -153,9 +164,100 @@ export function AnalysisStep3({ faceAnalysis, onNewAnalysis, onGoToDashboard, us
     return Math.round(compatibility)
   }
 
-  const downloadPDF = () => {
-    alert("Descargando PDF del análisis completo...")
-  }
+  // Función para generar y descargar el PDF (integrada desde OptiScan.tsx)
+  const generatePDFReport = async () => {
+    try {
+      console.log("📄 [FRONTEND] Iniciando generación de PDF...");
+      
+      if (!capturedImage) {
+        alert("❌ No hay imagen capturada para generar el PDF");
+        return;
+      }
+
+      // Iniciar estados de progreso
+      setIsGeneratingPDF(true);
+      setShowDownloadProgress(true);
+      setPdfDownloadProgress(0);
+
+      // Simular progreso inicial
+      const progressInterval = setInterval(() => {
+        setPdfDownloadProgress((prev) => {
+          if (prev >= 85) {
+            clearInterval(progressInterval);
+            return 85;
+          }
+          return prev + 5;
+        });
+      }, 200);
+
+      console.log("🌐 [FRONTEND] Enviando solicitud a: http://localhost:5001/generate-pdf-report");
+      
+      // Enviar la imagen y los datos del análisis al backend
+      const response = await fetch('http://localhost:5001/generate-pdf-report', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf'
+        },
+        body: JSON.stringify({ 
+          image: capturedImage,
+          faceAnalysis: faceAnalysis,
+          recommendedFrames: recommendedFrames
+        })
+      });
+      
+      clearInterval(progressInterval);
+      setPdfDownloadProgress(95);
+
+      if (response.ok) {
+        const blob = await response.blob();
+        
+        if (blob.size === 0) {
+          alert("❌ El PDF recibido está vacío");
+          setIsGeneratingPDF(false);
+          setPdfDownloadProgress(0);
+          return;
+        }
+        
+        // Progreso completado
+        setPdfDownloadProgress(100);
+        
+        // Pequeño delay para mostrar el 100%
+        setTimeout(() => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'analisis_facial_optiscan.pdf';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          
+          console.log("✅ [FRONTEND] PDF descargado exitosamente");
+          
+          // Resetear estados después de un breve momento
+          setTimeout(() => {
+            setIsGeneratingPDF(false);
+            setShowDownloadProgress(false);
+            setPdfDownloadProgress(0);
+          }, 1000);
+          
+        }, 500);
+        
+      } else {
+        // Manejo de errores...
+        setIsGeneratingPDF(false);
+        setShowDownloadProgress(false);
+        setPdfDownloadProgress(0);
+      }
+    } catch (error) {
+      console.error('❌ Error generando PDF:', error);
+      alert("Error de conexión con el servidor al generar PDF");
+      setIsGeneratingPDF(false);
+      setShowDownloadProgress(false);
+      setPdfDownloadProgress(0);
+    }
+  };
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
@@ -359,12 +461,22 @@ export function AnalysisStep3({ faceAnalysis, onNewAnalysis, onGoToDashboard, us
           {/* Botones de acción */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button
-              onClick={downloadPDF}
+              onClick={generatePDFReport}
+              disabled={isGeneratingPDF}
               size="lg"
-              className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-base sm:text-lg font-semibold px-6 sm:px-8 h-12 sm:h-14"
+              className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-base sm:text-lg font-semibold px-6 sm:px-8 h-12 sm:h-14 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download className="w-5 h-5 mr-2" />
-              Descargar PDF Completo
+              {isGeneratingPDF ? (
+                <>
+                  <div className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full" />
+                  Generando...
+                </>
+              ) : (
+                <>
+                  <Download className="w-5 h-5 mr-2" />
+                  Descargar PDF Completo
+                </>
+              )}
             </Button>
             <Button
               onClick={onNewAnalysis}
@@ -376,6 +488,34 @@ export function AnalysisStep3({ faceAnalysis, onNewAnalysis, onGoToDashboard, us
               Realizar Nuevo Análisis
             </Button>
           </div>
+
+          {/* Barra de progreso para descarga de PDF */}
+          {showDownloadProgress && (
+            <div className="mt-6 p-4 sm:p-6 bg-gray-800/70 rounded-2xl border border-blue-500/30 animate-fade-in-up max-w-md mx-auto">
+              <div className="flex items-center gap-4 mb-4">
+                <FileText className="h-6 w-6 text-blue-400 animate-pulse flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex justify-between mb-2">
+                    <span className="text-blue-300 font-medium text-sm sm:text-base">
+                      {pdfDownloadProgress < 100 ? "Generando PDF..." : "✅ PDF Listo!"}
+                    </span>
+                    <span className="text-blue-400 font-bold text-sm sm:text-base">{Math.round(pdfDownloadProgress)}%</span>
+                  </div>
+                  <div className="relative w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                      style={{ width: `${pdfDownloadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              {pdfDownloadProgress < 100 && (
+                <p className="text-blue-200 text-xs sm:text-sm text-center">
+                  Preparando tu análisis facial detallado...
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div >
