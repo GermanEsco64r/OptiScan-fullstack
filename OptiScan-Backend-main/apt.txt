@@ -6,3 +6,4 @@ libxrender-dev
 libgomp1
 libgl1-mesa-glx
 libgl1-mesa-dri
+libGL.so.1
