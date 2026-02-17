@@ -2,9 +2,9 @@ Flask==3.1.2
 flask-cors==6.0.1
 opencv-python-headless==4.11.0.86
 numpy==1.26.4
-scipy==1.16.2
+scipy==1.13.1
 mediapipe==0.10.32
-scikit-learn==1.7.2
-matplotlib==3.10.6
+scikit-learn==1.6.1
+matplotlib==3.9.4    # Cambiado
 fpdf==1.7.2
 pillow==11.3.0
