@@ -12,7 +12,9 @@ interface AnalysisStep2Props {
   isAnalyzing: boolean
   analysisProgress: number
   scanningAnimation: boolean
-  onContinue: () => void
+  onAnalyze: () => void
+  capturedImage: string | null
+  onImageCapture: (image: string | null) => void
 }
 
 export function AnalysisStep2({
@@ -20,9 +22,10 @@ export function AnalysisStep2({
   isAnalyzing,
   analysisProgress,
   scanningAnimation,
-  onContinue,
+  onAnalyze,
+  capturedImage,
+  onImageCapture,
 }: AnalysisStep2Props) {
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [showCapturePreview, setShowCapturePreview] = useState(false)
   const [isCapturing, setIsCapturing] = useState(false)
   const [squareSize, setSquareSize] = useState(120)
@@ -38,7 +41,6 @@ export function AnalysisStep2({
       try {
         console.log('📷 Inicializando cámara...')
         
-        // Detener cualquier stream anterior
         if (localStreamRef.current) {
           localStreamRef.current.getTracks().forEach(track => track.stop())
           localStreamRef.current = null
@@ -55,7 +57,6 @@ export function AnalysisStep2({
         localStreamRef.current = stream
         setShowWebcam(true)
         
-        // Conectar el stream al videoRef del padre
         if (videoRef.current) {
           videoRef.current.srcObject = stream
           videoRef.current.play().catch(error => {
@@ -75,14 +76,13 @@ export function AnalysisStep2({
 
     initializeCamera()
 
-    // Limpiar al desmontar
     return () => {
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => track.stop())
         localStreamRef.current = null
       }
     }
-  }, [videoRef]) // Agregado videoRef para estabilidad
+  }, [videoRef])
 
   // Efecto para calcular el tamaño del cuadrado amarillo (responsive)
   useEffect(() => {
@@ -124,7 +124,7 @@ export function AnalysisStep2({
     }
   }, [videoRef])
 
-  // Función para capturar la imagen con el cuadrado amarillo - SIN voltear la posición del cuadrado
+  // Función para capturar la imagen con el cuadrado amarillo
   const captureImage = () => {
     if (!videoRef.current || !showWebcam) {
       console.error('Video ref no disponible o cámara no activa')
@@ -134,7 +134,6 @@ export function AnalysisStep2({
     setIsCapturing(true)
     const video = videoRef.current
     
-    // Verificar que el video esté listo
     if (!isVideoReady) {
       console.warn('Video no está listo aún, esperando...')
       setTimeout(() => {
@@ -144,7 +143,6 @@ export function AnalysisStep2({
       return
     }
     
-    // Esperar a que el video tenga dimensiones
     if (video.videoWidth === 0 || video.videoHeight === 0) {
       console.warn('Video no tiene dimensiones, esperando...')
       setTimeout(() => {
@@ -154,7 +152,6 @@ export function AnalysisStep2({
       return
     }
     
-    // Crear canvas temporal
     const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
@@ -166,75 +163,56 @@ export function AnalysisStep2({
       return
     }
 
-    // IMPORTANTE: Aplicar volteo horizontal para que la foto sea como el usuario se ve en el espejo
+    // Voltear horizontalmente para que la foto sea como espejo
     ctx.save()
-    ctx.scale(-1, 1) // Voltear horizontalmente
+    ctx.scale(-1, 1)
     ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height)
     ctx.restore()
 
-    // Dibujar el cuadrado amarillo de referencia (5x5 cm) en la esquina superior izquierda
-    // (posición normal, no volteada)
+    // Dibujar cuadrado amarillo de referencia
     const squareX = 20
     const squareY = 20
 
-    // Cuadrado amarillo semi-transparente
     ctx.fillStyle = 'rgba(255, 255, 0, 0.4)'
     ctx.fillRect(squareX, squareY, squareSize, squareSize)
 
-    // Borde amarillo brillante
     ctx.strokeStyle = '#FFD700'
     ctx.lineWidth = 4
     ctx.strokeRect(squareX, squareY, squareSize, squareSize)
 
-    // Texto dentro del cuadrado
     ctx.fillStyle = '#FFFFFF'
     ctx.font = 'bold 18px Arial'
     ctx.textAlign = 'center'
     ctx.fillText('5×5 cm', squareX + squareSize / 2, squareY + squareSize / 2 + 6)
 
-    // Texto adicional
     ctx.font = '12px Arial'
     ctx.fillText('Referencia', squareX + squareSize / 2, squareY + squareSize + 15)
 
-    // Convertir a base64 y actualizar estados
     const imageBase64 = canvas.toDataURL('image/jpeg', 0.9)
-    setCapturedImage(imageBase64)
+    
+    // Notificar al padre y mostrar preview
+    onImageCapture(imageBase64)
     setShowCapturePreview(true)
     setIsCapturing(false)
     
     console.log('✅ Foto capturada correctamente')
   }
 
-  // Función para retomar foto - MEJORADA
+  // Función para retomar foto
   const retakePhoto = () => {
-    setCapturedImage(null)
+    // Limpiar imagen en el padre y ocultar preview
+    onImageCapture(null)
     setShowCapturePreview(false)
     
-    // Asegurarnos de que el video continúe reproduciéndose
+    // Asegurar que el video continúe
     if (videoRef.current && localStreamRef.current) {
-      // Verificar si el video está pausado o necesita reconexión
       if (videoRef.current.paused || !videoRef.current.srcObject) {
         videoRef.current.srcObject = localStreamRef.current
         videoRef.current.play().catch(error => {
           console.warn('⚠️ Error al reanudar video:', error)
-          // Intentar reiniciar la cámara si hay error
           restartCamera()
         })
       }
-    }
-  }
-
-  const handleContinue = () => {
-    if (capturedImage) {
-      console.log('🚀 Continuando al análisis con imagen capturada')
-      
-      // Detener la cámara antes de continuar
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop())
-        localStreamRef.current = null
-      }
-      
-      onContinue()
     }
   }
 
@@ -244,7 +222,6 @@ export function AnalysisStep2({
       setShowWebcam(false)
       setIsVideoReady(false)
       
-      // Detener stream anterior
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach(track => track.stop())
         localStreamRef.current = null
@@ -284,7 +261,7 @@ export function AnalysisStep2({
 
   return (
     <div className="min-h-screen w-full relative overflow-hidden">
-      {/* Animated background */}
+      {/* Fondo animado (igual) */}
       <div className="fixed inset-0 bg-gradient-to-br from-gray-950 via-blue-950 to-purple-950 -z-10">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(59,130,246,0.1),transparent_50%)]"></div>
         <div className="absolute top-0 -left-4 w-96 h-96 bg-blue-500/20 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
@@ -312,9 +289,8 @@ export function AnalysisStep2({
             <div className="relative w-full aspect-video max-w-5xl mx-auto mb-4 sm:mb-6 md:mb-8 bg-gray-950 rounded-xl overflow-hidden shadow-2xl">
               <canvas ref={canvasRef} className="hidden" />
 
-              {/* Contenedor principal que siempre muestra la cámara cuando está disponible */}
               <div className="relative w-full h-full">
-                {/* Video de la cámara - siempre presente si showWebcam es true */}
+                {/* Video de la cámara */}
                 {showWebcam && (
                   <video
                     ref={videoRef}
@@ -338,7 +314,7 @@ export function AnalysisStep2({
                   />
                 )}
 
-                {/* Vista previa de la foto capturada - superpuesta cuando está activa */}
+                {/* Vista previa de la foto capturada */}
                 {showCapturePreview && capturedImage && (
                   <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
                     <img
@@ -379,10 +355,10 @@ export function AnalysisStep2({
                   </div>
                 )}
 
-                {/* Elementos de overlay (cuadrados de referencia) - solo cuando la cámara está activa y no hay vista previa */}
+                {/* Elementos de overlay (solo cuando la cámara está activa y no hay preview) */}
                 {showWebcam && !showCapturePreview && (
                   <>
-                    {/* Cuadrado amarillo de referencia (5x5 cm) - en la esquina superior izquierda */}
+                    {/* Cuadrado amarillo de referencia */}
                     <div
                       className="absolute top-4 left-4 bg-yellow-500/30 border-4 border-yellow-500 rounded-lg shadow-lg"
                       style={{
@@ -391,7 +367,6 @@ export function AnalysisStep2({
                         boxShadow: '0 0 20px rgba(255, 215, 0, 0.5)',
                       }}
                     >
-                      {/* Texto indicativo dentro del cuadrado */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-white text-xs font-bold bg-yellow-600/70 px-2 py-1 rounded">
                           5×5 cm
@@ -402,13 +377,12 @@ export function AnalysisStep2({
                       </div>
                     </div>
 
-                    {/* Face detection square - center */}
+                    {/* Cuadrado de detección facial */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 sm:w-64 sm:h-64 md:w-80 md:h-80 border-4 border-blue-500 rounded-2xl">
                       <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl-lg"></div>
                       <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr-lg"></div>
                       <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl-lg"></div>
                       <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-white rounded-br-lg"></div>
-
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                         <div className="w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
                       </div>
@@ -467,7 +441,7 @@ export function AnalysisStep2({
                     Tomar Otra Foto
                   </Button>
                   <Button
-                    onClick={handleContinue}
+                    onClick={onAnalyze}
                     size="lg"
                     className="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-base sm:text-lg font-semibold px-6 sm:px-8 h-12 sm:h-14"
                     disabled={isAnalyzing || !capturedImage}
@@ -514,34 +488,25 @@ export function AnalysisStep2({
 
       <style jsx>{`
         @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
-        
         @keyframes scan-vertical {
           0% { top: -100%; }
           50% { top: 50%; }
           100% { top: 100%; }
         }
-        
         @keyframes scan-horizontal {
           0% { left: -100%; }
           50% { left: 50%; }
           100% { left: 100%; }
         }
-        
         .animate-fade-in {
           animation: fade-in 0.5s ease-out forwards;
         }
-        
         .animate-scan-vertical {
           animation: scan-vertical 2s linear infinite;
         }
-        
         .animate-scan-horizontal {
           animation: scan-horizontal 2.5s linear infinite;
         }
