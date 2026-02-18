@@ -53,7 +53,7 @@ export default function OptiScan() {
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [faceDetected, setFaceDetected] = useState(false)
-  const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [capturedImage, setCapturedImage] = useState<string | undefined>(undefined)
   const [facePosition, setFacePosition] = useState({ x: 50, y: 50 })
   const [scanningAnimation, setScanningAnimation] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -432,8 +432,8 @@ export default function OptiScan() {
     )
   }
 
-  return (
-    <>
+    return (
+      <>
       <Header
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
@@ -474,6 +474,7 @@ export default function OptiScan() {
                   eyeHeight: "3.2 cm"
                 }
               }}
+              capturedImage={capturedImage}
               onNewAnalysis={() => {
                 resetAnalysis()
                 startAnalysis()
@@ -482,8 +483,7 @@ export default function OptiScan() {
               userFrames={[]}
             />
           )}
-        </>
-      )}
+
 
       {showDashboard && userData && (
         <UserDashboard
