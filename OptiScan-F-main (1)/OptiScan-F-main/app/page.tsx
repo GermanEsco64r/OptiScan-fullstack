@@ -432,8 +432,8 @@ export default function OptiScan() {
     )
   }
 
-    return (
-      <>
+  return (
+    <>
       <Header
         isLoggedIn={isLoggedIn}
         onLogout={handleLogout}
@@ -483,7 +483,8 @@ export default function OptiScan() {
               userFrames={[]}
             />
           )}
-
+        </>
+      )}
 
       {showDashboard && userData && (
         <UserDashboard
