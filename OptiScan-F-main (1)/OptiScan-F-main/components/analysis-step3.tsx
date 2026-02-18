@@ -190,10 +190,10 @@ export function AnalysisStep3({
         });
       }, 200);
 
-      console.log("🌐 [FRONTEND] Enviando solicitud a: http://localhost:5001/generate-pdf-report");
+      console.log("🌐 [FRONTEND] Enviando solicitud a: https://optiscan.up.railway.app/generate-pdf-report");
       
       // Enviar la imagen y los datos del análisis al backend
-      const response = await fetch('http://localhost:5001/generate-pdf-report', {
+      const response = await fetch('https://optiscan.up.railway.app/generate-pdf-report', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
