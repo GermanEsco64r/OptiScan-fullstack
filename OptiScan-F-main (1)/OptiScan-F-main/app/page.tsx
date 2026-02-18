@@ -53,6 +53,7 @@ export default function OptiScan() {
   const [analysisProgress, setAnalysisProgress] = useState(0)
   const [analysisComplete, setAnalysisComplete] = useState(false)
   const [faceDetected, setFaceDetected] = useState(false)
+  const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [facePosition, setFacePosition] = useState({ x: 50, y: 50 })
   const [scanningAnimation, setScanningAnimation] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -453,10 +454,12 @@ export default function OptiScan() {
           {currentStep === 2 && (
             <AnalysisStep2
               videoRef={videoRef}
-              onContinue={handleContinueToAnalysis}
               isAnalyzing={isAnalyzing}
               analysisProgress={analysisProgress}
               scanningAnimation={scanningAnimation}
+              onAnalyze={handleContinueToAnalysis}
+              capturedImage={capturedImage}
+              onImageCapture={setCapturedImage}
             />
           )}
 
