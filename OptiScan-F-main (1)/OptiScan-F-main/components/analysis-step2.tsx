@@ -35,7 +35,7 @@ export function AnalysisStep2({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
 
-  // Inicializar la cámara solo una vez
+  // Inicializar la cámara una sola vez al montar el componente
   useEffect(() => {
     const initializeCamera = async () => {
       try {
@@ -57,11 +57,21 @@ export function AnalysisStep2({
         localStreamRef.current = stream
         setShowWebcam(true)
         
+        // Asignar el stream al video (el elemento ya existe en el DOM)
         if (videoRef.current) {
           videoRef.current.srcObject = stream
-          videoRef.current.play().catch(error => {
-            console.warn('⚠️ Error al reproducir video:', error)
-          })
+          // Esperar a que los metadatos estén cargados para reproducir
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play()
+              .then(() => {
+                console.log("✅ Video reproduciéndose")
+                setIsVideoReady(true)
+              })
+              .catch(error => {
+                console.warn('⚠️ Error al reproducir video:', error)
+                setCameraError('No se pudo reproducir el video')
+              })
+          }
         }
         
         setCameraError(null)
@@ -82,7 +92,7 @@ export function AnalysisStep2({
         localStreamRef.current = null
       }
     }
-  }, [videoRef])
+  }, []) // Dependencia vacía: solo se ejecuta al montar
 
   // Efecto para calcular el tamaño del cuadrado amarillo (responsive)
   useEffect(() => {
@@ -101,28 +111,6 @@ export function AnalysisStep2({
       window.removeEventListener('resize', calculateSquareSize)
     }
   }, [])
-
-  // Efecto para manejar cuando el video está listo
-  useEffect(() => {
-    const handleVideoReady = () => {
-      if (videoRef.current && videoRef.current.readyState >= 2) {
-        setIsVideoReady(true)
-        console.log("✅ Video listo para capturar")
-      }
-    }
-
-    if (videoRef.current) {
-      videoRef.current.addEventListener('loadeddata', handleVideoReady)
-      videoRef.current.addEventListener('canplay', handleVideoReady)
-      
-      return () => {
-        if (videoRef.current) {
-          videoRef.current.removeEventListener('loadeddata', handleVideoReady)
-          videoRef.current.removeEventListener('canplay', handleVideoReady)
-        }
-      }
-    }
-  }, [videoRef])
 
   // Función para capturar la imagen con el cuadrado amarillo
   const captureImage = () => {
@@ -204,13 +192,11 @@ export function AnalysisStep2({
     onImageCapture(null)
     setShowCapturePreview(false)
     
-    // Asegurar que el video continúe
+    // Asegurar que el video continúe (el stream ya está asignado)
     if (videoRef.current && localStreamRef.current) {
-      if (videoRef.current.paused || !videoRef.current.srcObject) {
-        videoRef.current.srcObject = localStreamRef.current
+      if (videoRef.current.paused) {
         videoRef.current.play().catch(error => {
           console.warn('⚠️ Error al reanudar video:', error)
-          restartCamera()
         })
       }
     }
@@ -240,7 +226,11 @@ export function AnalysisStep2({
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.play().catch(console.error)
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play()
+            .then(() => setIsVideoReady(true))
+            .catch(console.error)
+        }
       }
       
     } catch (error) {
@@ -290,29 +280,28 @@ export function AnalysisStep2({
               <canvas ref={canvasRef} className="hidden" />
 
               <div className="relative w-full h-full">
-                {/* Video de la cámara */}
-                {showWebcam && (
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${showCapturePreview ? 'opacity-0' : 'opacity-100'}`}
-                    style={{ transform: "scaleX(-1)" }}
-                    onLoadedMetadata={() => {
-                      console.log("✅ Video metadata cargada")
-                      setIsVideoReady(true)
-                    }}
-                    onCanPlay={() => {
-                      console.log("🎬 Video puede reproducirse")
-                      setIsVideoReady(true)
-                    }}
-                    onError={(e) => {
-                      console.error("❌ Error en video:", e)
-                      setCameraError("Error en la transmisión de video")
-                    }}
-                  />
-                )}
+                {/* Video de la cámara - SIEMPRE RENDERIZADO */}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${
+                    showCapturePreview ? 'opacity-0' : 'opacity-100'
+                  }`}
+                  style={{ transform: "scaleX(-1)" }}
+                  onLoadedMetadata={() => {
+                    console.log("✅ Video metadata cargada")
+                    // No es necesario setIsVideoReady aquí porque ya se maneja en onloadedmetadata del useEffect
+                  }}
+                  onCanPlay={() => {
+                    console.log("🎬 Video puede reproducirse")
+                  }}
+                  onError={(e) => {
+                    console.error("❌ Error en video:", e)
+                    setCameraError("Error en la transmisión de video")
+                  }}
+                />
 
                 {/* Vista previa de la foto capturada */}
                 {showCapturePreview && capturedImage && (
@@ -331,26 +320,26 @@ export function AnalysisStep2({
                   </div>
                 )}
 
-                {/* Estados de carga/error */}
-                {!showWebcam && (
-                  <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
+                {/* Estados de carga/error (overlays sobre el video) */}
+                {!showWebcam && !cameraError && (
+                  <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/80">
                     <div className="text-center">
-                      {cameraError ? (
-                        <div className="space-y-4">
-                          <p className="text-red-300 font-medium">Error de cámara</p>
-                          <Button
-                            onClick={restartCamera}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            Reintentar Cámara
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                          <p className="text-gray-300">Inicializando cámara...</p>
-                        </>
-                      )}
+                      <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-gray-300">Inicializando cámara...</p>
+                    </div>
+                  </div>
+                )}
+
+                {cameraError && (
+                  <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-black/80">
+                    <div className="text-center space-y-4">
+                      <p className="text-red-300 font-medium">{cameraError}</p>
+                      <Button
+                        onClick={restartCamera}
+                        className="bg-blue-600 hover:bg-blue-700"
+                      >
+                        Reintentar Cámara
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -462,24 +451,6 @@ export function AnalysisStep2({
                   El cuadrado amarillo muestra una referencia de 5x5 cm para escala. 
                   Haz clic en "Continuar al Análisis" para procesar la imagen.
                 </p>
-              </div>
-            )}
-
-            {cameraError && !showWebcam && !showCapturePreview && (
-              <div className="mt-6 text-center">
-                <p className="text-red-300 font-medium text-lg">
-                  ⚠️ Error de cámara
-                </p>
-                <p className="text-gray-400 text-sm mt-2">
-                  {cameraError}
-                </p>
-                <Button
-                  onClick={restartCamera}
-                  variant="outline"
-                  className="mt-4 border-gray-700 text-white hover:bg-gray-800"
-                >
-                  Reintentar
-                </Button>
               </div>
             )}
           </div>
