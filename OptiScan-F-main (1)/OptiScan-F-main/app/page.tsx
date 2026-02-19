@@ -467,13 +467,9 @@ export default function OptiScan() {
             <AnalysisStep3
               faceAnalysis={{
                 ...faceAnalysis,
-                measurements: {
-                  faceWidth: "18.5 cm",
-                  faceHeight: "22.0 cm",
-                  eyeDistance: "6.5 cm",
-                  eyeHeight: "3.2 cm"
-                }
+                measurements: faceAnalysis.measurements
               }}
+
               capturedImage={capturedImage}
               onNewAnalysis={() => {
                 resetAnalysis()
