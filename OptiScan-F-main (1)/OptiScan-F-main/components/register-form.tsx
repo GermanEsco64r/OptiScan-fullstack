@@ -42,18 +42,6 @@ export function RegisterForm({ onRegister, onSwitchToLogin }: RegisterFormProps)
     onRegister(name, lastName, company, email, password)
   }
 
-  const handleGoogleRegister = () => {
-    // Simulación de registro con Google
-    const googleName = "Usuario"
-    const googleLastName = "Google"
-    const googleCompany = "Google User"
-    const googleEmail = "usuario.google@example.com"
-    const googlePassword = "google_auth_token"
-    
-    alert("Registrando con Google...")
-    onRegister(googleName, googleLastName, googleCompany, googleEmail, googlePassword)
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden flex items-center justify-center p-4">
       {/* Animated Background */}
@@ -188,31 +176,6 @@ export function RegisterForm({ onRegister, onSwitchToLogin }: RegisterFormProps)
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </form>
-
-          {/* Divisor */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-700"></span>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-900/80 text-gray-400">O regístrate con</span>
-            </div>
-          </div>
-
-          {/* Botón de Google con imagen base64 */}
-          <Button
-            type="button"
-            onClick={handleGoogleRegister}
-            variant="outline"
-            className="w-full h-12 border-gray-700 bg-gray-800/50 hover:bg-gray-700/50 text-white font-semibold shadow-lg transition-all duration-300 transform hover:scale-[1.02]"
-          >
-            <img 
-              src="/google.png"
-              alt="Google Logo" 
-              className="w-5 h-5 mr-2"
-            />
-            Continuar con Google
-          </Button>
 
           <div className="mt-6 text-center">
             <p className="text-gray-400 text-sm">
