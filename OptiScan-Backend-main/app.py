@@ -181,7 +181,7 @@ def check_camera():
 
 @app.route('/analyze-face', methods=['POST'])
 def analyze_face():
-    """Endpoint para ejecutar el análisis facial con imagen capturada"""
+    """Endpoint para ejecutar el análisis facial con imagen capturada (incluye medidas reales)"""
     try:
         data = request.get_json()
         if not data or 'image' not in data:
@@ -199,8 +199,18 @@ def analyze_face():
         except Exception as e:
             return jsonify({"success": False, "error": f"Error al guardar imagen: {str(e)}"}), 400
 
-        # Llamada directa a la función de main
+        # Llamada directa a la función de main (análisis de forma)
         analysis_result = analizar_imagen_archivo(temp_path)
+
+        # Si el análisis de forma fue exitoso, agregar medidas reales y tono de piel
+        if analysis_result and analysis_result.get('estado') == 'exitoso':
+            # 1. Integrar medidas reales (píxeles a cm)
+            analysis_result = analizar_imagen_con_medidas_reales(image_base64, analysis_result)
+            
+            # 2. Agregar análisis de tono de piel (opcional pero recomendado)
+            tono_result = analizar_tono_imagen(temp_path)
+            if tono_result and tono_result.get('estado') == 'exitoso':
+                analysis_result['tono_piel'] = tono_result
 
         # Limpiar archivo temporal
         if os.path.exists(temp_path):
@@ -209,7 +219,8 @@ def analyze_face():
         if analysis_result and analysis_result.get('estado') == 'exitoso':
             return jsonify({"success": True, "data": analysis_result})
         else:
-            return jsonify({"success": False, "error": analysis_result.get('error', 'Error en análisis')}), 500
+            error_msg = analysis_result.get('error', 'Error en análisis') if analysis_result else 'Análisis fallido'
+            return jsonify({"success": False, "error": error_msg}), 500
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
