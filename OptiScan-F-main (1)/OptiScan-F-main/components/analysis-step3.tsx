@@ -121,29 +121,6 @@ export function AnalysisStep3({
     }
   }, [userFrames, defaultFrames]) // Agregamos defaultFrames a las dependencias
 
-  const measurements = [
-    {
-      label: "Ancho de Rostro",
-      value: faceAnalysis?.measurements?.faceWidth || "No disponible",
-      icon: Ruler
-    },
-    {
-      label: "Alto de Rostro",
-      value: faceAnalysis?.measurements?.faceHeight || "No disponible",
-      icon: Ruler
-    },
-    {
-      label: "Distancia entre Ojos",
-      value: faceAnalysis?.measurements?.eyeDistance || "No disponible",
-      icon: Eye
-    },
-    {
-      label: "Alto de Ojos",
-      value: faceAnalysis?.measurements?.eyeHeight || "No disponible",
-      icon: Eye
-    },
-  ]
-
   const recommendedColors = [
     { name: "Negro Clásico", hex: "#000000", description: "Elegante y versátil" },
     { name: "Gris Plata", hex: "#C0C0C0", description: "Refinado y contemporáneo" },
@@ -284,30 +261,6 @@ export function AnalysisStep3({
               }
             </p>
           </div>
-
-          {/* Medidas Faciales */}
-          <Card className="mb-6 sm:mb-8 bg-gray-900/80 backdrop-blur-xl border-gray-800">
-            <CardContent className="p-4 sm:p-6 md:p-8">
-              <h3 className="text-xl sm:text-2xl font-bold text-white mb-4 sm:mb-6 flex items-center gap-2">
-                <Ruler className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
-                Medidas Faciales Detectadas
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-                {measurements.map((measurement, index) => (
-                  <div
-                    key={index}
-                    className="bg-gray-800/50 p-4 sm:p-5 rounded-lg border border-gray-700 hover:border-blue-500/50 transition-all"
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <measurement.icon className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                      <p className="text-xs sm:text-sm text-gray-400">{measurement.label}</p>
-                    </div>
-                    <p className="text-xl sm:text-2xl font-bold text-white">{measurement.value}</p>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Análisis de Estructura */}
           <Card className="mb-6 sm:mb-8 bg-gray-900/80 backdrop-blur-xl border-gray-800">
